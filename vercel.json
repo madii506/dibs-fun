@@ -1,0 +1,95 @@
+{
+  "cleanUrls": true,
+  "functions": {
+    "api/launch.js": {
+      "maxDuration": 60
+    },
+    "api/tick.js": {
+      "maxDuration": 60
+    },
+    "api/dibs.js": {
+      "maxDuration": 60
+    },
+    "api/coins.js": {
+      "maxDuration": 25
+    },
+    "api/meta.js": {
+      "maxDuration": 15
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/m/:id",
+      "destination": "/api/meta?id=:id"
+    },
+    {
+      "source": "/i/:id",
+      "destination": "/api/meta?img=:id"
+    },
+    {
+      "source": "/c/:mint",
+      "destination": "/"
+    },
+    {
+      "source": "/coins",
+      "destination": "/"
+    },
+    {
+      "source": "/launch",
+      "destination": "/"
+    },
+    {
+      "source": "/activity",
+      "destination": "/"
+    },
+    {
+      "source": "/hall",
+      "destination": "/"
+    },
+    {
+      "source": "/me",
+      "destination": "/"
+    },
+    {
+      "source": "/how",
+      "destination": "/"
+    },
+    {
+      "source": "/token",
+      "destination": "/"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*).woff2",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
+}

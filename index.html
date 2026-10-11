@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DIBS</title>
+<meta name="description" content="Call dibs on any coin. Every coin launched on DIBS is up for dibs: whoever holds it gets the creator fees, and anyone can call dibs over you by paying you more.">
+<meta property="og:title" content="DIBS">
+<meta property="og:description" content="Call dibs on any coin. Whoever has dibs gets the fees. Anyone can call dibs over you, and they pay you to do it.">
+<meta property="og:image" content="https://dibs-fun.vercel.app/assets/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://dibs-fun.vercel.app/assets/og.png">
+<meta name="theme-color" content="#FFD23F">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/icon-64.png">
+<link rel="apple-touch-icon" href="/assets/icon-180.png">
+<link rel="preload" href="/assets/inter-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/d.css?v=1">
+</head>
+<body>
+<header class="nav">
+  <a class="logo" href="/"><img src="/assets/mark.png" alt="">DIBS</a>
+  <nav class="menu" id="menu" aria-label="main">
+    <a href="/coins" data-r="coins">Coins</a>
+    <a href="/launch" data-r="launch">Launch</a>
+    <a href="/activity" data-r="activity">Activity</a>
+    <a href="/hall" data-r="hall">Hall of Dibs</a>
+    <a href="/me" data-r="me">My Dibs</a>
+    <a href="/how" data-r="how">How it works</a>
+    <a href="/token" data-r="token">$DIBS</a>
+  </nav>
+  <div class="right"><button class="b sm y" type="button" data-connect>Connect</button></div>
+</header>
+<div class="tape" id="tape" hidden><div class="run" id="tapeRun"></div></div>
+<main id="screen"><div class="boot"><img src="/assets/mark.png" alt=""></div></main>
+<div class="modal" id="modal" hidden><div class="sheet" role="dialog" aria-modal="true"><button class="x" type="button" data-close aria-label="close">✕</button><div id="sheet"></div></div></div>
+<div class="toast" id="toast"></div>
+<script type="module" src="/assets/app.js?v=1"></script>
+</body>
+</html>
