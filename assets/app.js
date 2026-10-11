@@ -3,6 +3,8 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FINE = matchMedia('(hover: hover) and (pointer: fine)').matches;
 async function api(path, opt = {}) {
   try { const r = await fetch(path, { ...opt, signal: AbortSignal.timeout(opt.ms || 25000) }); return await r.json(); }
   catch { return { ok: false, error: 'The server didn’t answer. Check your connection and try again.' }; }
@@ -99,7 +101,7 @@ async function route() {
   const hit = ROUTES.find(([re]) => re.test(path));
   if (!hit) { set(notFound()); return; }
   set('<div class="boot"><img src="/assets/mark.png" alt=""></div>');
-  try { await hit[1](path.match(hit[0]), q, () => mine === VIEW); } catch (e) { if (mine === VIEW) set(`<div class="msg bad">This page broke: ${esc(e && e.message)}. <a href="/">Go home</a></div>`); }
+  try { await hit[1](path.match(hit[0]), q, () => mine === VIEW); const f = $('#screen').firstElementChild; if (f && !REDUCE) { f.classList.add('page-in'); } } catch (e) { if (mine === VIEW) set(`<div class="msg bad">This page broke: ${esc(e && e.message)}. <a href="/">Go home</a></div>`); }
   window.scrollTo(0, 0);
 }
 function go(href) { history.pushState(null, '', href); route(); }
@@ -117,43 +119,43 @@ async function home() {
   set(`<section class="hero">
     <div class="side" id="heroL"></div>
     <div class="mid">
-      <span class="kick"><i class="dot"></i> a pump.fun launchpad with a twist</span>
-      <h1 style="margin-top:22px">Call dibs on <span class="pill">any coin.</span></h1>
+      <div class="rays" aria-hidden="true"></div>
+      <h1 style="margin-top:8px"><span class="w" style="--i:0">Call</span> <span class="w" style="--i:1">dibs</span> <span class="w" style="--i:2">on</span> <span class="w pill" style="--i:3">any coin.</span></h1>
       <p class="lead">Every coin launched on DIBS is up for dibs: whoever has it gets the coin’s creator fees. Anyone can call dibs over you, and they pay you to do it.</p>
       <div class="cta"><a class="b y xl" href="/coins">☝ Call dibs</a><a class="b xl" href="/launch">Launch a coin</a></div>
     </div>
     <div class="side" id="heroR"></div>
   </section>
   <section class="sec"><div class="stats" id="stats">${['coins up for dibs', 'dibs called', 'paid to holders', 'fees paid out', 'burned'].map(l => `<div class="st"><div class="l">${l}</div><div class="v">—</div></div>`).join('')}</div></section>
-  <section class="sec"><div class="hd"><div><h2>How dibs works</h2><p>Three moves. Every one is a public Solana transaction.</p></div><a class="b sm" href="/how">The full rules</a></div>
+  ${xtapes()}
+  <section class="sec"><div class="hd"><div><h2>How dibs <span class="hl">works</span></h2><p>Three moves. Every one is a public Solana transaction.</p></div><a class="b sm" href="/how">The full rules</a></div>
     <div class="steps">
       <div class="card stp tl"><div class="ico">${HAND}</div><b>01. CALL DIBS</b><p>Pay the coin’s dibs price. Dibs is yours the moment your SOL lands.</p></div>
       <div class="card stp"><div class="ico">${COINS}</div><b>02. COLLECT</b><p>While you hold dibs, the coin’s creator fees are paid to your wallet. No claiming.</p></div>
       <div class="card stp tr"><div class="ico">${UP}</div><b>03. GET OUT-DIBSED</b><p>Someone calls dibs over you at +20%. They pay you ${prev}% of it: more than you paid.</p></div>
     </div></section>
   <section class="sec grid g2" style="align-items:start">
-    <div><h2>Where a dibs goes</h2><p class="mute" style="margin:0 0 18px">Every time someone calls dibs, the price they pay is split three ways.</p>
+    <div><h2>Where a dibs <span class="hl">goes</span></h2><p class="mute" style="margin:0 0 18px">Every time someone calls dibs, the price they pay is split three ways.</p>
       <div class="split"><div class="a" style="flex:${prev}">${prev}% to the holder</div><div class="bb" style="flex:${burn * 1.6}">${burn}% burn</div>${cut ? `<div class="c" style="flex:${cut * 1.6}">${cut}%</div>` : ''}</div>
       <div class="legend"><div><i style="background:var(--y)"></i><span><b>${prev}% to the outgoing holder.</b> The person who loses dibs is paid for it, on top of every fee they collected.</span></div>
         <div><i style="background:#ffb08a"></i><span><b>${burn}% buys the coin back and burns it.</b> Every dibs makes the coin scarcer.</span></div>
         ${cut ? `<div><i style="background:var(--blue)"></i><span><b>${cut}% to the $DIBS treasury.</b></span></div>` : `<div><i style="background:var(--blue)"></i><span><b>The $DIBS treasury’s 5% goes to the outgoing holder</b> until the treasury is set.</span></div>`}
         <div><i style="background:#fff"></i><span><b>The next dibs costs 20% more.</b> The launcher is the first holder, at the start price they choose.</span></div></div></div>
     <div class="card calc" id="calc"></div></section>
-  <section class="sec"><div class="hd"><div><h2>Up for dibs</h2><p>Coins on DIBS, freshest dibs first.</p></div><a class="b sm" href="/coins">All coins</a></div><div id="hot" class="grid g3"><div class="empty">Reading the board…</div></div></section>
+  <section class="sec"><div class="hd"><div><h2>Up for <span class="hl">dibs</span></h2><p>Coins on DIBS, freshest dibs first.</p></div><a class="b sm" href="/coins">All coins</a></div><div id="hot" class="grid g3"><div class="empty">Reading the board…</div></div></section>
   <section class="sec grid g2" style="align-items:start">
-    <div><div class="hd"><div><h2>Live dibs</h2><p>Straight from the engine’s log.</p></div><a class="b sm" href="/activity">All activity</a></div><div id="feed" class="feed"><div class="empty">Reading…</div></div></div>
-    <div><div class="hd"><div><h2>Hall of dibs</h2><p>Who made the most from dibs.</p></div><a class="b sm" href="/hall">The hall</a></div><div id="hallp"><div class="empty">Reading…</div></div></div></section>
-  <section class="sec"><h2 style="margin-bottom:18px">Questions</h2>${faq(cfg)}</section>
+    <div><div class="hd"><div><h2>Live <span class="hl">dibs</span></h2><p>Straight from the engine’s log.</p></div><a class="b sm" href="/activity">All activity</a></div><div id="feed" class="feed"><div class="empty">Reading…</div></div></div>
+    <div><div class="hd"><div><h2>Hall of <span class="hl">dibs</span></h2><p>Who made the most from dibs.</p></div><a class="b sm" href="/hall">The hall</a></div><div id="hallp"><div class="empty">Reading…</div></div></div></section>
+  <section class="sec"><h2 style="margin-bottom:18px">Good <span class="hl">questions</span></h2>${faq(cfg)}</section>
   <section class="sec band"><span class="hand">${HAND}</span><h2 style="margin-top:12px">Got a coin in you?</h2><p class="lead">Launch it on DIBS. You hold the first dibs, its fees come to you, and whoever wants it next has to pay you for it.</p><div class="cta" style="display:flex;justify-content:center;gap:12px;margin-top:24px;flex-wrap:wrap"><a class="b y xl" href="/launch">Launch a coin</a><a class="b xl" href="/how">Read the rules</a></div></section>
   ${foot(cfg)}`);
   calc(cfg);
   const [list, st, act, hl] = await Promise.all([api('/api/coins'), api('/api/coins?op=stats'), api('/api/coins?op=activity'), api('/api/coins?op=hall')]);
-  if (st.ok) $('#stats').innerHTML = [['coins up for dibs', st.live], ['dibs called', st.dibs], ['paid to holders', sol(st.toHoldersSol)], ['fees paid out', sol(st.feesSol)], ['burned', sol(st.burnedSol)]].map(([l, v]) => `<div class="st"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  if (st.ok && !st.offline) $('#stats').innerHTML = [['coins up for dibs', st.live, ''], ['dibs called', st.dibs, ''], ['paid to holders', st.toHoldersSol, ' SOL'], ['fees paid out', st.feesSol, ' SOL'], ['burned', st.burnedSol, ' SOL']].map(([l, v, u]) => `<div class="st"><div class="l">${l}</div><div class="v" data-count="${+v || 0}" data-unit="${u}">0${u}</div></div>`).join('');
   const cs = list.ok ? (list.coins || []) : [];
   $('#hot').innerHTML = cs.length ? cs.slice(0, 6).map(card).join('') : `<div class="empty" style="grid-column:1/-1"><b>No coins up for dibs yet.</b>The first coin on DIBS is yours to launch. You’ll hold its first dibs.<div style="margin-top:14px"><a class="b y" href="/launch">Launch the first coin</a></div></div>`;
-  const ghost = (t) => `<div class="dc ${t} float${t === 'tr' ? ' d2' : ''}" style="pointer-events:none"><div class="top"><span class="img" style="display:grid;place-items:center;font-size:24px">?</span><span class="up"><i></i>UP FOR DIBS</span></div><div class="nm">Your coin<span>$YOURS</span></div><div class="lab">dibs holder</div><div class="val">you</div><div class="lab">its creator fees go to</div><div class="val">you</div><span class="b y go">Call dibs</span></div>`;
-  $('#heroL').innerHTML = cs[0] ? `<div class="tl float">${card(cs[0])}</div>` : ghost('tl');
-  $('#heroR').innerHTML = cs[1] ? `<div class="tr float d2">${card(cs[1])}</div>` : cs[0] ? '' : ghost('tr');
+  if (cs[0]) $('#heroL').innerHTML = `<div class="tl float">${card(cs[0])}</div>`; else demo($('#heroL'), DEMOS[0], 'tl', 0);
+  if (cs[1]) $('#heroR').innerHTML = `<div class="tr float d2">${card(cs[1])}</div>`; else demo($('#heroR'), DEMOS[1], 'tr', 1400);
   feedInto($('#feed'), act.ok ? (act.log || []).slice(0, 7) : [], 'No dibs yet. When someone calls one, it shows up here with its transaction.');
   $('#hallp').innerHTML = hl.ok && (hl.earners || []).length ? earnersTable(hl.earners.slice(0, 6)) : `<div class="empty"><b>The hall is empty.</b>The first holder to get out-dibsed goes up here.</div>`;
   tape();
@@ -457,6 +459,97 @@ async function token() {
     </div>`);
 }
 function notFound() { return `<div class="empty" style="margin-top:40px"><span class="hand">${HAND}</span><b style="font-size:40px;margin-top:10px">404</b>Nobody called dibs on this page, because it doesn’t exist.<div style="margin-top:16px"><a class="b y" href="/">Go home</a></div></div>`; }
+
+
+// ================= motion & effects =================
+const HAMMY = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#FFE9C9" stroke="#141414" stroke-width="5"/><circle cx="28" cy="31" r="10" fill="#E8A25A" stroke="#141414" stroke-width="4.5"/><circle cx="28" cy="31" r="4.5" fill="#F4B3AA"/><circle cx="72" cy="31" r="10" fill="#E8A25A" stroke="#141414" stroke-width="4.5"/><circle cx="72" cy="31" r="4.5" fill="#F4B3AA"/><ellipse cx="50" cy="56" rx="31" ry="27" fill="#E8A25A" stroke="#141414" stroke-width="4.5"/><ellipse cx="29" cy="64" rx="13" ry="11" fill="#F8D7AE" stroke="#141414" stroke-width="3.5"/><ellipse cx="71" cy="64" rx="13" ry="11" fill="#F8D7AE" stroke="#141414" stroke-width="3.5"/><ellipse cx="50" cy="66" rx="12" ry="9" fill="#F8D7AE"/><circle cx="40" cy="50" r="4.6" fill="#141414"/><circle cx="41.6" cy="48.4" r="1.6" fill="#fff"/><circle cx="60" cy="50" r="4.6" fill="#141414"/><circle cx="61.6" cy="48.4" r="1.6" fill="#fff"/><ellipse cx="50" cy="59" rx="3.6" ry="2.6" fill="#E26D6D" stroke="#141414" stroke-width="2"/><path d="M45.5 64.5 Q50 68 54.5 64.5" fill="none" stroke="#141414" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const QUACK = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#D5ECFF" stroke="#141414" stroke-width="5"/><path d="M18 74 Q50 84 84 72" fill="none" stroke="#7FBDEB" stroke-width="5" stroke-linecap="round"/><ellipse cx="55" cy="62" rx="27" ry="16" fill="#FFD23F" stroke="#141414" stroke-width="4.5"/><path d="M58 58 Q68 52 74 60" fill="none" stroke="#141414" stroke-width="3.5" stroke-linecap="round"/><circle cx="40" cy="38" r="15" fill="#FFD23F" stroke="#141414" stroke-width="4.5"/><path d="M26 39 Q14 40 18 46 Q24 49 30 44 Z" fill="#FF8A3D" stroke="#141414" stroke-width="3.5" stroke-linejoin="round"/><circle cx="39" cy="34" r="3.6" fill="#141414"/><circle cx="40.2" cy="32.8" r="1.2" fill="#fff"/></svg>`;
+const DEMOS = [{ name: 'Hammy', sym: 'HAMMY', art: HAMMY, start: 1 }, { name: 'Quack', sym: 'QUACK', art: QUACK, start: 0.5 }];
+// an example card that plays the rules on a loop: someone calls dibs, the old holder gets paid, the price climbs 20%
+function demo(host, d, tilt, delay) {
+  let price = d.start, n = 0, seed = d.sym + ':0';
+  host.innerHTML = `<div class="${tilt} float${tilt === 'tr' ? ' d2' : ''}" style="position:relative"><div class="dc demo" style="pointer-events:none">
+    <div class="top"><span class="img">${d.art}</span><span class="up"><i></i>UP FOR DIBS</span></div>
+    <div class="nm">${d.name}<span>$${d.sym}</span></div>
+    <div class="lab">dibs holder</div><div class="val" data-h>${face(seed)}<span class="mono flip">anon</span></div>
+    <div class="row"><div><div class="lab">dibs costs</div><div class="val"><span class="flip" data-p>${num(price)} SOL</span></div></div><div><div class="lab">next one</div><div class="val"><span class="flip" data-n>+20%</span></div></div></div>
+    <span class="b y go" data-btn>Call dibs</span></div><div class="ex">example · how it plays</div></div>`;
+  if (REDUCE) return;
+  const card = host.querySelector('.dc'), btn = host.querySelector('[data-btn]');
+  const step = () => {
+    if (!document.body.contains(host)) return clearInterval(t);
+    btn.classList.add('press'); setTimeout(() => btn.classList.remove('press'), 160);
+    const r = btn.getBoundingClientRect(); if (r.top > 0 && r.bottom < innerHeight) burst(r.left + r.width / 2, r.top + r.height / 2, 'DIBS!');
+    const paid = price * ((CFG && CFG.prevBps) || 9500) / 1e4;
+    const plus = document.createElement('div'); plus.className = 'plus'; plus.textContent = `+${num(paid)} SOL to the last holder`; card.appendChild(plus); setTimeout(() => plus.remove(), 1500);
+    price = Math.ceil(price * 1.2 * 1e4) / 1e4; n++; seed = d.sym + ':' + n;
+    const h = host.querySelector('[data-h]'); h.innerHTML = `${face(seed)}<span class="mono flip go">${['anon', 'degen', 'whale', 'you?', 'ser', 'fren'][n % 6]}</span>`; h.classList.remove('swap'); void h.offsetWidth; h.classList.add('swap');
+    const pe = host.querySelector('[data-p]'); pe.classList.remove('go'); void pe.offsetWidth; pe.classList.add('go'); setTimeout(() => { pe.textContent = num(price) + ' SOL'; }, 220);
+    if (n >= 9) { n = 0; price = d.start; }
+  };
+  let t; setTimeout(() => { if (!document.body.contains(host)) return; step(); t = setInterval(step, 3200); TIMERS.push(t); }, 1600 + delay);
+}
+function xtapes() {
+  const a = ['CALL DIBS ☝', 'COLLECT THE FEES', 'GET OUT-DIBSED', '<em>+20%</em> EVERY TIME', 'THEY PAY YOU TO TAKE IT'];
+  const b = ['WHOEVER HAS DIBS GETS THE FEES', '<em>95%</em> TO THE LAST HOLDER', '<em>5%</em> BOUGHT BACK &amp; BURNED', 'ANY COIN. ANY TIME.'];
+  const run = list => { const one = `<span>${list.map(x => `<span>${x}</span>`).join('<span>✦</span>')}<span>✦</span></span>`; return one + one + one + one; };
+  return `<div class="xtapes" aria-hidden="true"><div class="xt b"><div class="xr">${run(b)}</div></div><div class="xt a"><div class="xr">${run(a)}</div></div></div>`;
+}
+// comic burst wherever someone presses a yellow or black button
+const BC = ['#FFD23F', '#ffb08a', '#7cc6ff', '#b9f3cf', '#ffb3c7'];
+function burst(x, y, text = 'DIBS!') {
+  if (REDUCE) return;
+  const d = document.createElement('div'); d.className = 'burst'; d.style.left = x + 'px'; d.style.top = y + 'px';
+  d.innerHTML = `<b>${text}</b>` + Array.from({ length: 12 }, (_, i) => `<i style="--a:${i * 30 + Math.random() * 14}deg;--c:${BC[i % 5]}"></i>`).join('');
+  document.body.appendChild(d); setTimeout(() => d.remove(), 900);
+}
+document.addEventListener('click', e => { const b = e.target.closest('.b.y, .b.k'); if (b && !b.disabled) burst(e.clientX, e.clientY, /dibs/i.test(b.textContent) ? 'DIBS!' : ['NICE!', 'GO!', 'YES!'][Math.floor(Math.random() * 3)]); });
+// reveal on scroll, count-ups and 3D tilt, wired to whatever the router draws
+const IO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; e.target.classList.add('vis'); IO.unobserve(e.target); }), { rootMargin: '0px 0px -6% 0px', threshold: 0.06 }) : null;
+const CO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; CO.unobserve(e.target); countUp(e.target); }), { threshold: 0.3 }) : null;
+function countUp(el) {
+  const to = +el.dataset.count || 0, unit = el.dataset.unit || '', int = !unit;
+  if (REDUCE || !to) { el.textContent = (int ? to : num(to)) + unit; return; }
+  const t0 = performance.now(), dur = 1200;
+  const tick = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = to * e; el.textContent = (int ? Math.round(v) : num(+v.toFixed(4))) + unit; if (k < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+function tilt(el) {
+  el.classList.add('tilt');
+  el.addEventListener('pointermove', e => { const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; el.style.transform = `perspective(900px) rotateX(${(-y * 9).toFixed(2)}deg) rotateY(${(x * 11).toFixed(2)}deg) translateY(-4px)`; });
+  el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+}
+function fx(root) {
+  if (!root) return;
+  let i = 0;
+  root.querySelectorAll('h1:not(.wired), h2:not(.wired), .lead:not(.wired), .dc:not(.wired), .card:not(.wired), .st:not(.wired), .it:not(.wired), .tw:not(.wired), details:not(.wired), .split:not(.wired), .empty:not(.wired), .msg:not(.wired), .lad:not(.wired)').forEach(el => {
+    el.classList.add('wired');
+    if (el.closest('.hero') || el.closest('.modal') || el.closest('.demo')) return;
+    if (el.classList.contains('split')) { IO ? IO.observe(el) : el.classList.add('vis'); return; }
+    el.classList.add('rv'); el.style.setProperty('--d', (i++ % 6) * 70 + 'ms');
+    IO ? IO.observe(el) : el.classList.add('vis');
+  });
+  root.querySelectorAll('[data-count]:not(.counted)').forEach(el => { el.classList.add('counted'); CO ? CO.observe(el) : countUp(el); });
+  if (FINE && !REDUCE) root.querySelectorAll('a.dc:not(.tilt), .stp:not(.tilt), .st:not(.tilt), .throne:not(.tilt)').forEach(tilt);
+}
+new MutationObserver(() => fx($('#screen'))).observe($('#screen'), { childList: true, subtree: true });
+// doodles drifting behind the page, with a little parallax, and a scroll progress bar
+(function doodles() {
+  const host = $('#doodles'); if (!host) return;
+  const D = {
+    hand: `<svg viewBox="155 150 690 690"><rect x="378" y="716" width="250" height="104" rx="20" fill="#fff" stroke="#141414" stroke-width="30"/><rect x="352" y="452" width="296" height="292" rx="78" fill="#FFD23F" stroke="#141414" stroke-width="30"/><rect x="352" y="168" width="112" height="380" rx="56" fill="#FFD23F" stroke="#141414" stroke-width="30"/><rect x="470" y="452" width="178" height="96" rx="48" fill="#FFD23F" stroke="#141414" stroke-width="30"/><rect x="470" y="536" width="178" height="96" rx="48" fill="#FFD23F" stroke="#141414" stroke-width="30"/><rect x="470" y="620" width="178" height="96" rx="48" fill="#FFD23F" stroke="#141414" stroke-width="30"/><rect x="352" y="566" width="236" height="92" rx="46" fill="#FFD23F" stroke="#141414" stroke-width="30"/></svg>`,
+    coin: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="#FFD23F" stroke="#141414" stroke-width="4"/><circle cx="30" cy="30" r="16" fill="none" stroke="#141414" stroke-width="3" stroke-dasharray="4 5"/></svg>`,
+    up: `<svg viewBox="0 0 60 60"><rect x="6" y="6" width="48" height="48" rx="13" fill="#fff" stroke="#141414" stroke-width="4"/><path d="M30 44V17M19 28l11-11 11 11" fill="none" stroke="#141414" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    star: `<svg viewBox="0 0 60 60"><path d="M30 4l6 18 18 6-18 6-6 18-6-18-18-6 18-6z" fill="#FFD23F" stroke="#141414" stroke-width="3.5" stroke-linejoin="round"/></svg>`,
+    squig: `<svg viewBox="0 0 80 30"><path d="M4 18q8-14 16 0t16 0 16 0 16 0 8-6" fill="none" stroke="#141414" stroke-width="4" stroke-linecap="round"/></svg>`,
+    pct: `<svg viewBox="0 0 90 46"><rect x="3" y="3" width="84" height="40" rx="12" fill="#b9f3cf" stroke="#141414" stroke-width="4"/><text x="45" y="31" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="20" fill="#141414">+20%</text></svg>`,
+  };
+  const spots = [['hand', 4, 18, 54], ['coin', 92, 14, 44], ['star', 12, 62, 34], ['up', 88, 52, 46], ['pct', 6, 88, 74], ['squig', 82, 84, 70], ['coin', 46, 96, 38], ['star', 70, 30, 28], ['hand', 94, 74, 40], ['up', 26, 38, 36]];
+  host.innerHTML = spots.map(([k, x, y, w], i) => `<div class="dd" style="left:${x}%;top:${y}%;width:${w}px;height:${w}px;--k:${(0.04 + (i % 4) * 0.035).toFixed(3)}"><div style="width:100%;height:100%;--t:${7 + (i % 5) * 1.6}s;--dl:${-i * 1.3}s;--r0:${-10 + (i % 3) * 4}deg;--r1:${8 - (i % 4) * 3}deg">${D[k]}</div></div>`).join('');
+  let raf = 0;
+  const onScroll = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; const y = scrollY, h = document.documentElement.scrollHeight - innerHeight; host.style.setProperty('--sy', y); const p = $('#sprog'); if (p) p.style.transform = `scaleX(${h > 0 ? Math.min(1, y / h) : 0})`; }); };
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
 
 route();
 try { const o = JSON.parse(localStorage.getItem('dibs:order') || 'null'); if (o && o.id) api('/api/dibs?op=status&id=' + o.id).then(s => { if (s.ok && ['waiting', 'paying'].includes(s.state)) { trackOrder({ id: s.id, wallet: s.wallet, need: s.need, needSol: s.needSol, symbol: s.coin && s.coin.symbol }); toast('Picking up your dibs where it left off'); } else localStorage.removeItem('dibs:order'); }); } catch {}
