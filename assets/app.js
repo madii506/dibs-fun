@@ -149,13 +149,13 @@ async function home() {
   calc(cfg);
   const [list, st, act, hl] = await Promise.all([api('/api/coins'), api('/api/coins?op=stats'), api('/api/coins?op=activity'), api('/api/coins?op=hall')]);
   if (st.ok) $('#stats').innerHTML = [['coins up for dibs', st.live], ['dibs called', st.dibs], ['paid to holders', sol(st.toHoldersSol)], ['fees paid out', sol(st.feesSol)], ['burned', sol(st.burnedSol)]].map(([l, v]) => `<div class="st"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
-  const cs = list.ok ? list.coins : [];
+  const cs = list.ok ? (list.coins || []) : [];
   $('#hot').innerHTML = cs.length ? cs.slice(0, 6).map(card).join('') : `<div class="empty" style="grid-column:1/-1"><b>No coins up for dibs yet.</b>The first coin on DIBS is yours to launch. You’ll hold its first dibs.<div style="margin-top:14px"><a class="b y" href="/launch">Launch the first coin</a></div></div>`;
   const ghost = (t) => `<div class="dc ${t} float${t === 'tr' ? ' d2' : ''}" style="pointer-events:none"><div class="top"><span class="img" style="display:grid;place-items:center;font-size:24px">?</span><span class="up"><i></i>UP FOR DIBS</span></div><div class="nm">Your coin<span>$YOURS</span></div><div class="lab">dibs holder</div><div class="val">you</div><div class="lab">its creator fees go to</div><div class="val">you</div><span class="b y go">Call dibs</span></div>`;
   $('#heroL').innerHTML = cs[0] ? `<div class="tl float">${card(cs[0])}</div>` : ghost('tl');
   $('#heroR').innerHTML = cs[1] ? `<div class="tr float d2">${card(cs[1])}</div>` : cs[0] ? '' : ghost('tr');
-  feedInto($('#feed'), act.ok ? act.log.slice(0, 7) : [], 'No dibs yet. When someone calls one, it shows up here with its transaction.');
-  $('#hallp').innerHTML = hl.ok && hl.earners.length ? earnersTable(hl.earners.slice(0, 6)) : `<div class="empty"><b>The hall is empty.</b>The first holder to get out-dibsed goes up here.</div>`;
+  feedInto($('#feed'), act.ok ? (act.log || []).slice(0, 7) : [], 'No dibs yet. When someone calls one, it shows up here with its transaction.');
+  $('#hallp').innerHTML = hl.ok && (hl.earners || []).length ? earnersTable(hl.earners.slice(0, 6)) : `<div class="empty"><b>The hall is empty.</b>The first holder to get out-dibsed goes up here.</div>`;
   tape();
 }
 function calc(cfg) {
@@ -202,7 +202,7 @@ async function coins() {
   let all = [];
   const paint = () => { const f = $('#find').value.trim().toLowerCase(); const l = all.filter(c => !f || (c.name + ' ' + c.symbol + ' ' + c.mint).toLowerCase().includes(f));
     $('#cl').innerHTML = l.length ? l.map(card).join('') : all.length ? `<div class="empty" style="grid-column:1/-1">Nothing matches that.</div>` : `<div class="empty" style="grid-column:1/-1"><b>No coins yet.</b>Launch the first one and hold its first dibs.<div style="margin-top:14px"><a class="b y" href="/launch">Launch a coin</a></div></div>`; };
-  const load = async s => { const j = await api('/api/coins?sort=' + s); all = j.ok ? j.coins : []; if (!j.ok) $('#cl').innerHTML = `<div class="msg bad">${esc(j.error)}</div>`; else paint(); };
+  const load = async s => { const j = await api('/api/coins?sort=' + s); all = j.ok ? (j.coins || []) : []; if (!j.ok) $('#cl').innerHTML = `<div class="msg bad">${esc(j.error)}</div>`; else paint(); };
   $$('#sort button').forEach(b => b.addEventListener('click', () => { $$('#sort button').forEach(x => x.classList.toggle('on', x === b)); load(b.dataset.s); }));
   $('#find').addEventListener('input', paint);
   await load('hot');
@@ -395,14 +395,14 @@ async function activity() {
   set(`<h1 style="font-size:clamp(36px,6vw,62px)">Live <span class="pill">activity.</span></h1><p class="lead">Every dibs, payout, burn and launch, newest first. Each one links to its transaction.</p>
     <div class="tabs" id="ak" style="margin-top:26px">${[['', 'Everything'], ['dibs', 'Dibs'], ['payout', 'Dibs payouts'], ['pay', 'Fee payouts'], ['burn', 'Burns'], ['launch', 'Launches']].map(([k, t], i) => `<button type="button" data-k="${k}" class="${i ? '' : 'on'}">${t}</button>`).join('')}</div><div class="feed" id="af" style="margin-top:18px"><div class="empty">Reading…</div></div>`);
   let k = '';
-  const load = async () => { const j = await api('/api/coins?op=activity' + (k ? '&kind=' + k : '')); feedInto($('#af'), j.ok ? j.log : [], j.ok ? 'Nothing here yet. The first dibs on DIBS will show up here.' : esc(j.error)); };
+  const load = async () => { const j = await api('/api/coins?op=activity' + (k ? '&kind=' + k : '')); feedInto($('#af'), j.ok ? (j.log || []) : [], j.ok ? 'Nothing here yet. The first dibs on DIBS will show up here.' : esc(j.error)); };
   $$('#ak button').forEach(b => b.addEventListener('click', () => { $$('#ak button').forEach(x => x.classList.toggle('on', x === b)); k = b.dataset.k; load(); }));
   await load(); every(load, 15000);
 }
 async function hall() {
   set(`<h1 style="font-size:clamp(36px,6vw,62px)">Hall of <span class="pill">dibs.</span></h1><p class="lead">Net = fees collected + what they were paid when out-dibsed − what they paid for dibs.</p><div id="hl" class="sec" style="margin-top:30px"><div class="empty">Reading…</div></div>`);
   const j = await api('/api/coins?op=hall');
-  if (!j.ok) { $('#hl').innerHTML = `<div class="msg bad">${esc(j.error)}</div>`; return; }
+  if (!j.ok || j.offline) { $('#hl').innerHTML = `<div class="msg bad">${esc(j.error || 'The records are offline for a moment.')}</div>`; return; }
   const none = m => `<div class="empty">${m}</div>`;
   $('#hl').innerHTML = `<div class="grid g2" style="align-items:start"><div><h2>Top earners</h2>${j.earners.length ? earnersTable(j.earners) : none('Nobody yet.')}</div>
     <div><h2>Longest dibs</h2>${j.longest.length ? `<div class="tw"><table class="tbl"><thead><tr><th>holder</th><th>coin</th><th class="n">held</th></tr></thead><tbody>${j.longest.map(x => `<tr><td>${who(x.holder, 1)}</td><td><a href="/c/${esc(x.mint)}"><b>$${esc(x.symbol)}</b></a></td><td class="n mono">${dur(x.secs)}${x.live ? ' <span class="up" style="font-size:9px"><i></i>NOW</span>' : ''}</td></tr>`).join('')}</tbody></table></div>` : none('Nobody yet.')}
@@ -415,7 +415,7 @@ async function me(q) {
   $('#mf').addEventListener('submit', e => { e.preventDefault(); const v = $('#mw').value.trim(); if (v) go('/me?w=' + encodeURIComponent(v)); });
   if (!w) { $('#mo').innerHTML = `<div class="empty"><b>Connect or paste a wallet.</b>You’ll see the coins it holds dibs on, every dibs it had, and every fee it was paid.</div>`; return; }
   const j = await api('/api/coins?op=me&w=' + encodeURIComponent(w));
-  if (!j.ok) { $('#mo').innerHTML = `<div class="msg bad">${esc(j.error)}</div>`; return; }
+  if (!j.ok || j.offline) { $('#mo').innerHTML = `<div class="msg bad">${esc(j.error)}</div>`; return; }
   const fees = j.payouts.reduce((a, p) => a + p.sol, 0), out = j.reigns.reduce((a, r) => a + (r.paidOutSol || 0), 0), paidIn = j.reigns.reduce((a, r) => a + (r.paidInSol || 0), 0);
   $('#mo').innerHTML = `<div style="display:flex;align-items:center;gap:14px">${face(w, 'lg')}<div class="mono" style="word-break:break-all;font-weight:700">${esc(w)}</div></div>
     <div class="stats s4" style="margin-top:22px"><div class="st"><div class="l">holding dibs on</div><div class="v">${j.holding.length}</div></div><div class="st"><div class="l">fees received</div><div class="v">${sol(fees)}</div></div><div class="st"><div class="l">paid when out-dibsed</div><div class="v">${sol(out)}</div></div><div class="st"><div class="l">spent on dibs</div><div class="v">${sol(paidIn)}</div></div></div>
