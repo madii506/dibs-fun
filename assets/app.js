@@ -473,7 +473,7 @@ function demo(host, d, tilt, delay) {
     <div class="nm">${d.name}<span>$${d.sym}</span></div>
     <div class="lab">dibs holder</div><div class="val" data-h>${face(seed)}<span class="mono flip">anon</span></div>
     <div class="row"><div><div class="lab">dibs costs</div><div class="val"><span class="flip" data-p>${num(price)} SOL</span></div></div><div><div class="lab">next one</div><div class="val"><span class="flip" data-n>+20%</span></div></div></div>
-    <span class="b y go" data-btn>Call dibs</span></div><div class="ex">example · how it plays</div></div>`;
+    <span class="b y go" data-btn>Call dibs</span></div></div>`;
   if (REDUCE) return;
   const card = host.querySelector('.dc'), btn = host.querySelector('[data-btn]');
   const step = () => {
